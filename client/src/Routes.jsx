@@ -1,20 +1,37 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import io from "socket.io-client";
+import { set } from "../src/common/storage";
 
-const Home = lazy(() => import('./components/home'));
-const CreateGame = lazy(() => import('./components/createGame'));
-const JoinGame = lazy(() => import('./components/joinGame'));
+let endPoint = "http://localhost:5000";
+let socket = io.connect(`${endPoint}`);
 
-const Routes = () => (
-  <Router>
-    <Suspense fallback={<div>Loading...</div>}>
-      <Switch>
-        <Route exact path="/create" component={CreateGame}/>
-        <Route exact path="/join" component={JoinGame}/>
-        <Route exact path="/" component={Home}/>
-      </Switch>
-    </Suspense>
-  </Router>
-);
+const Home = lazy(() => import("./components/home"));
+const CreateGame = lazy(() => import("./components/createGame"));
+const JoinGame = lazy(() => import("./components/joinGame"));
+
+const Routes = () => {
+  useEffect(() => {
+    socket.on("connect", (data) => {
+      console.log(data);
+    });
+
+    socket.on("message", (data) => {
+      console.log(data);
+      set("sessionId", data);
+    });
+  }, []);
+  return (
+    <Router>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Switch>
+          <Route exact path="/create" component={CreateGame} />
+          <Route exact path="/join" component={JoinGame} />
+          <Route exact path="/" component={Home} />
+        </Switch>
+      </Suspense>
+    </Router>
+  );
+};
 
 export default Routes;

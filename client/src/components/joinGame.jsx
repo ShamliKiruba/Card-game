@@ -1,30 +1,32 @@
 import React, { useState } from "react";
+import { get } from "../common/storage";
 
 const JoinGame = () => {
   let [code, setCode] = useState("");
 
-  const enterGame = (code) => {
+  const enterGame = () => {
     //make API call
     async function postData(
-      url = "https://localhost:8080/enterGame",
-      data = {}
+      url = "http://localhost:5000/enterRoom",
+      data = {
+        code,
+        sessionId: get("sessionId"),
+      }
     ) {
+      console.log("request-->>", code);
       const response = await fetch(url, {
         method: "POST",
-        mode: "cors",
+        "Access-Control-Allow-Origin": "http://localhost:5000",
         cache: "no-cache",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        redirect: "follow",
-        referrerPolicy: "no-referrer",
-        body: JSON.stringify(data),
+        headers: {},
+        body: JSON.stringify({
+          data: code,
+        }),
       });
       return response.json();
     }
 
-    postData("https://localhost:5000/enterGame", { code }).then((data) => {
+    postData("http://localhost:5000/enterRoom", { code }).then((data) => {
       console.log(data); // JSON data parsed by `data.json()` call
     });
   };
@@ -37,7 +39,7 @@ const JoinGame = () => {
         value={code}
         onChange={(event) => setCode(event.target.value)}
       />
-      <button type="submit" onClick={enterGame()}>
+      <button type="submit" onClick={enterGame}>
         Submit
       </button>
     </div>

@@ -67,9 +67,12 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
 
-
 Ref: https://github.com/Hasi6/React-Flask-Chat-App
 https://medium.com/analytics-vidhya/simple-chat-app-with-react-flask-b2ae72404fcb
 
+Python:
+https://github.com/bndr/pipreqs
+to write in requirements.txt the installed files
 
-
+    pip install pipreqs
+    pipreqs [options] <path>
