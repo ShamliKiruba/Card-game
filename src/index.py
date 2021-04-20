@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request;
-from flask_socketio import SocketIO, send, disconnect, emit
+from flask_socketio import SocketIO, send, disconnect, emit, join_room
 from flask_login import current_user
 from random import randint
 from logic import Match
@@ -12,22 +12,32 @@ app.config['SECRET_KEY'] = 'mysecret'
 roomsCreated = []
 activeRooms = {} #contains room ids and their corresponding connected users
 
-@app.route('/createRoom')
+@app.route('/createRoom', methods=['POST'])
 def createRoom():
+    sessionId = json.loads(request.data.decode('utf-8')).get('sessionId') 
     room = randint(1000, 9999)
     roomsCreated.append(room)
-    # activeRooms[room] = [ request.sid ]
-    
+    activeRooms[room] = [ sessionId ]
+    print("activeRooms--->")
+    print(activeRooms)
     return jsonify({'room': room})
 
 @app.route('/enterRoom', methods=['POST'])
 def joinGame():
-    data = json.loads(request.data.decode('utf-8')).get('data') 
+    sessionId = json.loads(request.data.decode('utf-8')).get('sessionId') 
+    data = int(json.loads(request.data.decode('utf-8')).get('data'))
     result = None
-    if int(data) in roomsCreated:
-        print('condition true')
+    if data in roomsCreated:
+        activeRooms[data].append(sessionId)
         result = data
+        
     return jsonify({'room': result})
+
+@app.route('/getPlayers', methods=['POST'])
+def getPlayers():
+    room = json.loads(request.data.decode('utf-8')).get('room')
+    players = activeRooms.get(room)
+    return jsonify({'players': players})
 
 socketIo = SocketIO(app, cors_allowed_origins="*")
 
@@ -46,6 +56,14 @@ def test_connect():
     print("------------------------------")
     print('[INFO] Web client disconnected: {}'.format(request.sid))
     print("------------------------------")
+
+@socketIo.on('join')
+def handle_join_room_event(data):
+    username = data['sessionId']
+    room = data['room']
+    join_room(room)
+    # send(username, to=room)
+    socketIo.emit('join_room_announcement', data, to=room)
 
 @socketIo.on("message")
 def handleMessage(msg):

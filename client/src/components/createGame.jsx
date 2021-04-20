@@ -1,25 +1,26 @@
 import React from "react";
+import { useHistory } from "react-router-dom";
+import { get, set } from "../common/storage";
+import { callAPI } from '../common/service';
 
-const createGame = () => {
-  const create = () => {
-    //make API call
-    async function postData(
-      url = "http://localhost:5000/createRoom",
-      data = {}
-    ) {
-      const response = await fetch(url, {
-        method: "GET",
-        "Access-Control-Allow-Origin": "http://localhost:5000",
-        cache: "no-cache",
-      });
-      return response.json();
-    }
+function HostGame() {
+	let history = useHistory();
+	const changeRoute = (route) => {
+		history.push(`/${route}`);
+	};
+    const create = () => {
+		const payload = {
+			sessionId: get("sessionId"),
+		};
+		callAPI('POST','createRoom', payload).then((data) => {
+			console.log(data);
+			set('room', data.room)
+			changeRoute("room");
+		});
+    };
+  return (
+    <div onClick={create}>Create game</div>
+  );
+}
 
-    postData("http://localhost:5000/createRoom").then((data) => {
-      console.log(data); // JSON data parsed by `data.json()` call
-    });
-  };
-  return <div onClick={create}>Create game</div>;
-};
-
-export default createGame;
+export default HostGame;

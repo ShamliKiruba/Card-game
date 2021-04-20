@@ -9,6 +9,7 @@ let socket = io.connect(`${endPoint}`);
 const Home = lazy(() => import("./components/home"));
 const CreateGame = lazy(() => import("./components/createGame"));
 const JoinGame = lazy(() => import("./components/joinGame"));
+const Room = lazy(() => import("./components/room"));
 
 const Routes = () => {
   useEffect(() => {
@@ -17,7 +18,6 @@ const Routes = () => {
     });
 
     socket.on("message", (data) => {
-      console.log(data);
       set("sessionId", data);
     });
   }, []);
@@ -27,6 +27,7 @@ const Routes = () => {
         <Switch>
           <Route exact path="/create" component={CreateGame} />
           <Route exact path="/join" component={JoinGame} />
+          <Route exact path="/room" component={Room} />
           <Route exact path="/" component={Home} />
         </Switch>
       </Suspense>
