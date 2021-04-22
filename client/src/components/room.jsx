@@ -21,7 +21,7 @@ function Room() {
         socketio.emit("join", payload);
         socketio.on("join_room_announcement", asd => {
             console.log("asd1111", asd)
-            setPlayers((players) => [...players, asd.sessionId]);
+            setPlayers(asd);
         });
     }, []);
     return (

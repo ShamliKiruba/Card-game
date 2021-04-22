@@ -63,11 +63,11 @@ def handle_join_room_event(data):
     room = data['room']
     join_room(room)
     # send(username, to=room)
-    socketIo.emit('join_room_announcement', data, to=room)
+    socketIo.emit('join_room_announcement', activeRooms.get(room), to=room)
 
 @socketIo.on("message")
 def handleMessage(msg):
-    send(msg, broadcast=True)
+    send(msg)
     return None
 
 
