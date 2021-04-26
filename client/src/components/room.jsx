@@ -6,9 +6,11 @@ import { SOCKET } from '../common/socket';
 function Room() {
     let [players, setPlayers] = useState([]);
     let [cards, setCards] = useState([]);
+    let [game, setGame] = useState({});
+    const sessionId = get("sessionId")
     useEffect(() => {
         const payload = {
-            sessionId: get("sessionId"),
+            sessionId: sessionId,
             room: get('room')
         };
         // to get all players
@@ -25,14 +27,16 @@ function Room() {
         });
         SOCKET.on("distribute_cards", res => {
             console.log("Cards", res)
-            setCards(res)
+            setGame(res)
+            setCards(res.player_card[sessionId].cards)
         });
     }, []);
     return (
-        <div>
+        <div className="board">
             {players.length > 0  && players.map(player => {
+                    const cardCount = game.player_card && game.player_card[player].totalCards
                     return (
-                        <div className="board" key={player}>
+                        <div key={player}>
                             {
                                 get('sessionId') === player ? (
                                     <div className="myDeck">
@@ -48,6 +52,9 @@ function Room() {
                                     </div>
                                 ) : (
                                     <div className="others">
+                                        {
+                                            [...Array(cardCount)].map((e, i) => <img src={`design.png`}></img>)
+                                        }
                                         {player}
                                     </div>
                                 )}

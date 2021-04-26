@@ -4,6 +4,7 @@ from flask_login import current_user
 from random import randint
 from logic import Match
 import json
+import copy
 # import psycopg2
 
 app = Flask(__name__)
@@ -48,23 +49,34 @@ app.host = 'localhost'
 
 def checkForPlayers(room):
     clientArr = activeRooms.get(room)
-    if len(clientArr) == 2:
+    if len(clientArr) == 4:
         asd = Match()
         cards = asd.distributeCards()
+        game = {}
         for index, client in enumerate(clientArr):
-            print("------------------------------")
             player_card[client] = {
                 'room': room,
-                'cards': cards[index]
+                'cards': cards[index],
+                'totalCards': 13
             }
-            socketIo.emit('distribute_cards', cards[index], room=client)
-            game[room] = {
-                'player_card': player_card,
-                'center_cards': {},
-                'set_one_round':{}
-            } 
-            print(game)
-    print("------------------------------")
+        game[room] = {
+            'player_card': player_card,
+            'center_cards': {},
+            'set_one_round':{}
+        } 
+        response = copy.deepcopy(game.get(room))
+        for index, client in enumerate(clientArr):
+            playerCard = copy.deepcopy(game.get(room).get('player_card'))
+            for key in playerCard:
+                if key != client:
+                    emptyCards = {
+                        'cards': None
+                    }
+                    playerCard.get(key).update(emptyCards)
+                else:
+                    pass
+                response.get('player_card').update(playerCard)
+            socketIo.emit('distribute_cards', response, room=client)
 
 
 @socketIo.on('connect')
