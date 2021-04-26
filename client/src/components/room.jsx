@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { callAPI } from '../common/service';
 import { get } from '../common/storage';
-import io from "socket.io-client";
+import { SOCKET } from '../common/socket';
 
 function Room() {
-    let endPoint = "http://localhost:5000";
-    let socketio = io.connect(`${endPoint}`, { query: get('room') });
     let [players, setPlayers] = useState([]);
+    let [cards, setCards] = useState([]);
     useEffect(() => {
         const payload = {
             sessionId: get("sessionId"),
@@ -18,20 +17,33 @@ function Room() {
         });
         // to join room
         // Connected, let's sign-up for to receive messages for this room
-        socketio.emit("join", payload);
-        socketio.on("join_room_announcement", asd => {
-            console.log("asd1111", asd)
-            setPlayers(asd);
+        console.log("payload", payload)
+        SOCKET.emit("join", payload);
+        SOCKET.on("join_room_announcement", playerData => {
+            console.log("as11d1111", playerData)
+            setPlayers(playerData);
+        });
+        SOCKET.on("distribute_cards", res => {
+            console.log("Cards", res)
+            setCards(res)
         });
     }, []);
     return (
         <div>
             {players.length > 0  && players.map(player => {
                     return (
-                        <div key={player}>
+                        <div className="board" key={player}>
                             {
                                 get('sessionId') === player ? (
-                                    <div className="myId">
+                                    <div className="myDeck">
+                                        {
+                                            cards.map(card => {
+                                                const symbol = card.split('_')[1];
+                                                return (
+                                                    <img src={`deck/${symbol}/${card}.png`}></img>
+                                                )
+                                            })
+                                        }
                                         {player}
                                     </div>
                                 ) : (

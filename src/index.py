@@ -11,6 +11,8 @@ app.config['SECRET_KEY'] = 'mysecret'
 
 roomsCreated = []
 activeRooms = {} #contains room ids and their corresponding connected users
+player_card = {}
+game = {}
 
 @app.route('/createRoom', methods=['POST'])
 def createRoom():
@@ -44,6 +46,27 @@ socketIo = SocketIO(app, cors_allowed_origins="*")
 app.debug = True
 app.host = 'localhost'
 
+def checkForPlayers(room):
+    clientArr = activeRooms.get(room)
+    if len(clientArr) == 2:
+        asd = Match()
+        cards = asd.distributeCards()
+        for index, client in enumerate(clientArr):
+            print("------------------------------")
+            player_card[client] = {
+                'room': room,
+                'cards': cards[index]
+            }
+            socketIo.emit('distribute_cards', cards[index], room=client)
+            game[room] = {
+                'player_card': player_card,
+                'center_cards': {},
+                'set_one_round':{}
+            } 
+            print(game)
+    print("------------------------------")
+
+
 @socketIo.on('connect')
 def test_connect():
     print("------------------------------")
@@ -63,6 +86,7 @@ def handle_join_room_event(data):
     room = data['room']
     join_room(room)
     # send(username, to=room)
+    checkForPlayers(room)
     socketIo.emit('join_room_announcement', activeRooms.get(room), to=room)
 
 @socketIo.on("message")
