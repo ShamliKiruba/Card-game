@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { callAPI } from '../common/service';
 import { get } from '../common/storage';
 import { SOCKET } from '../common/socket';
+import { dummy } from '../data/dummy';
 
 function Room() {
-    let [players, setPlayers] = useState([]);
+    let [opponents, setOpponents] = useState([]);
     let [cards, setCards] = useState([]);
     let [game, setGame] = useState({});
-    const sessionId = get("sessionId")
+    const sessionId = get("sessionId");
     useEffect(() => {
         const payload = {
             sessionId: sessionId,
@@ -15,15 +16,13 @@ function Room() {
         };
         // to get all players
         callAPI('POST', 'getPlayers', payload).then(data => {
+            // all players
             // setPlayers(data.players);
         });
-        // to join room
-        // Connected, let's sign-up for to receive messages for this room
-        console.log("payload", payload)
         SOCKET.emit("join", payload);
         SOCKET.on("join_room_announcement", playerData => {
-            console.log("as11d1111", playerData)
-            setPlayers(playerData);
+            let opponents = playerData.filter(player => player != sessionId);
+            setOpponents(opponents);
         });
         SOCKET.on("distribute_cards", res => {
             console.log("Cards", res)
@@ -32,35 +31,41 @@ function Room() {
         });
     }, []);
     return (
-        <div className="board">
-            {players.length > 0  && players.map(player => {
-                    const cardCount = game.player_card && game.player_card[player].totalCards
-                    return (
-                        <div key={player}>
-                            {
-                                get('sessionId') === player ? (
-                                    <div className="myDeck">
-                                        {
-                                            cards.map(card => {
-                                                const symbol = card.split('_')[1];
-                                                return (
-                                                    <img src={`deck/${symbol}/${card}.png`}></img>
-                                                )
-                                            })
-                                        }
-                                        {player}
-                                    </div>
-                                ) : (
+        <div className="board-container"> 
+            {
+                opponents.length == 3 ? (
+                    <div>
+                        {opponents.length > 0  && opponents.map(opponent => {
+                            const cardCount = game.player_card && game.player_card[opponent].totalCards
+                            return (
+                                <div className='opponent' key={opponent}>
                                     <div className="others">
+                                        <p>{opponent}</p>
                                         {
                                             [...Array(cardCount)].map((e, i) => <img src={`design.png`}></img>)
                                         }
-                                        {player}
                                     </div>
-                                )}
-                        </div>
-                    )
-                })
+                                </div>
+                            )
+                        })
+                    }
+                    <div className="myDeck">
+                        {
+                            cards.map(card => {
+                                const symbol = card.split('_')[1];
+                                return (
+                                    <img src={`deck/${symbol}/${card}.png`}></img>
+                                );
+                            })
+                        }
+                        <p>{sessionId}</p>
+                    </div>
+                    </div>
+                ) : (
+                    <div>
+                        Waiting for everyone to join
+                    </div>
+                )
             }
         </div>
     )

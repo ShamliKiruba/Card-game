@@ -14,13 +14,81 @@ code {
     monospace;
 }
 
-.board {
-    padding: 10%;
+.board-container {
+    padding: 5%;
     border: 1px solid black;
-    width: 65%;
-    margin: 10% auto;
+    width: 75%;
+	height: 1000px;
+    margin: 5% auto;
     background: #215a02;
+	position: relative;
 	img {
 		width: 100px;
 	}
+	.myDeck {
+		position: absolute;
+		bottom: 0;
+	}
+	
+	.opponent, .myDeck {
+		&:nth-child(1) {
+			img {
+				position: absolute;
+				@for $i from 1 through 20 {
+					&:nth-child(#{$i}) {
+						left: calc(#{$i} * 30px);
+					}
+				}
+			}
+		}
+	}
+	.myDeck {
+		img {
+			position: absolute;
+			@for $i from 1 through 20 {
+				&:nth-child(#{$i}) {
+					left: calc(#{$i} * 30px);
+				}
+			}
+		}
+	}
+	.opponent {
+		position: relative;
+		&:nth-child(2), &:nth-child(3) {
+			img {
+				position: absolute;
+				@for $i from 1 through 20 {
+					&:nth-child(#{$i}) {
+						top: calc(#{$i} * 30px);
+					}
+				}
+			}
+		}
+	}
+}
+
+.opponent {
+    &:first-child {
+		position: absolute;
+		left: 30%;
+		top: 0;
+		background-color: blue;
+    }
+    &:nth-child(2) {
+		position: absolute;
+		left: 10%;
+		top: 20%;
+		background-color: black;
+    }
+    &:nth-child(3) {
+		position: absolute;
+		right: 10%;
+		top: 20%;
+		background-color: red;
+    }
+}
+.myDeck {
+	position: absolute;
+	top: 70%;
+	left: 30%;
 }
