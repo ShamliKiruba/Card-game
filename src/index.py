@@ -5,6 +5,8 @@ from random import randint
 from logic import Match
 import json
 import copy
+import time
+import asyncio
 # import psycopg2
 
 app = Flask(__name__)
@@ -47,7 +49,23 @@ socketIo = SocketIO(app, cors_allowed_origins="*")
 app.debug = True
 app.host = 'localhost'
 
+def setPlayersTurn(room):
+    clientArr = activeRooms.get(room)
+    print("------------------------------")
+    print("proper order-->")
+    print(clientArr)
+    print("------------------------------")
+    i = 0
+    while True:
+        socketIo.emit("player_turn", clientArr[i], to=room)
+        time.sleep(10)   
+        i += 1
+        if i == len(clientArr):
+            i = 0
+
+
 def checkForPlayers(room):
+    cardsDistributed = 0
     clientArr = activeRooms.get(room)
     if len(clientArr) == 4:
         asd = Match()
@@ -62,7 +80,8 @@ def checkForPlayers(room):
         game[room] = {
             'player_card': player_card,
             'center_cards': {},
-            'set_one_round':{}
+            'set_one_round':{},
+            'active_player': ''
         } 
         response = copy.deepcopy(game.get(room))
         for index, client in enumerate(clientArr):
@@ -77,6 +96,9 @@ def checkForPlayers(room):
                     pass
                 response.get('player_card').update(playerCard)
             socketIo.emit('distribute_cards', response, room=client)
+            cardsDistributed += 1
+        if cardsDistributed == 4:
+            setPlayersTurn(room)
 
 
 @socketIo.on('connect')
@@ -98,8 +120,8 @@ def handle_join_room_event(data):
     room = data['room']
     join_room(room)
     # send(username, to=room)
-    checkForPlayers(room)
     socketIo.emit('join_room_announcement', activeRooms.get(room), to=room)
+    checkForPlayers(room)
 
 @socketIo.on("message")
 def handleMessage(msg):

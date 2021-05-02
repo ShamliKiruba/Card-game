@@ -29,6 +29,9 @@ function Room() {
             setGame(res)
             setCards(res.player_card[sessionId].cards)
         });
+        SOCKET.on("player_turn", res => {
+            console.log("player_turn", res)
+        });
     }, []);
     return (
         <div className="board-container"> 
