@@ -46,6 +46,20 @@ def getPlayers():
 
 socketIo = SocketIO(app, cors_allowed_origins="*")
 
+@app.route('/dropCard', methods=['POST'])
+def dropCard():
+    room = json.loads(request.data.decode('utf-8')).get('room')
+    card = json.loads(request.data.decode('utf-8')).get('card')
+    id = json.loads(request.data.decode('utf-8')).get('id')
+    round_one = game.get(int(room)).get('set_one_round')
+    player_card = game.get(int(room)).get('player_card').get(id)
+    player_card.get('cards').remove(card) # remove from list
+    player_card['totalCards'] =  player_card.get('totalCards') - 1
+    round_one[id] = card
+    response = game.get(int(room))
+    socketIo.emit('drop_card', {'data': response}, to=room)
+    return jsonify({'data': response})
+
 app.debug = True
 app.host = 'localhost'
 
@@ -70,7 +84,6 @@ def checkForPlayers(room):
     if len(clientArr) == 4:
         asd = Match()
         cards = asd.distributeCards()
-        game = {}
         for index, client in enumerate(clientArr):
             player_card[client] = {
                 'room': room,
@@ -80,7 +93,7 @@ def checkForPlayers(room):
         game[room] = {
             'player_card': player_card,
             'center_cards': {},
-            'set_one_round':{},
+            'set_one_round': {},
             'active_player': ''
         } 
         response = copy.deepcopy(game.get(room))

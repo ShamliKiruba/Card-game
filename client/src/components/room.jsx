@@ -6,13 +6,16 @@ import { dummy } from '../data/dummy';
 
 function Room() {
     let [opponents, setOpponents] = useState([]);
-    let [cards, setCards] = useState([]);
+    // let [cards, setCards] = useState([]);
     let [game, setGame] = useState({});
+    let [currentPlayer, setCurrentPlayer] = useState('');
     const sessionId = get("sessionId");
+    const room = get("room");
+
     useEffect(() => {
         const payload = {
-            sessionId: sessionId,
-            room: get('room')
+            sessionId,
+            room
         };
         // to get all players
         callAPI('POST', 'getPlayers', payload).then(data => {
@@ -25,14 +28,34 @@ function Room() {
             setOpponents(opponents);
         });
         SOCKET.on("distribute_cards", res => {
-            console.log("Cards", res)
             setGame(res)
-            setCards(res.player_card[sessionId].cards)
+            // setCards(res.player_card[sessionId].cards)
         });
         SOCKET.on("player_turn", res => {
             console.log("player_turn", res)
+            setCurrentPlayer(res);
+        });
+        SOCKET.on("drop_card", res => {
+            console.log("drop_card", res)
+            setGame(res.data);
         });
     }, []);
+
+    const dropCard = (e) => {
+        if(currentPlayer == sessionId) {
+            let payload = {
+                card: e.target.getAttribute('value'),
+                id: sessionId,
+                room: room
+            };
+            callAPI('POST', 'dropCard', payload).then(res => {
+                console.log('successful', res)
+                setGame(res.data)
+                // setCards(res.data.player_card[sessionId].cards)
+            });    
+        }
+    };
+
     return (
         <div className="board-container"> 
             {
@@ -43,6 +66,13 @@ function Room() {
                             return (
                                 <div className='opponent' key={opponent}>
                                     <div className="others">
+                                        {
+                                            currentPlayer == opponent ? (
+                                                <p>Your Turn</p>
+                                            ) : (
+                                                ''
+                                            )
+                                        }
                                         <p>{opponent}</p>
                                         {
                                             [...Array(cardCount)].map((e, i) => <img src={`design.png`}></img>)
@@ -54,12 +84,19 @@ function Room() {
                     }
                     <div className="myDeck">
                         {
-                            cards.map(card => {
+                            game.player_card && game.player_card[sessionId].cards.map(card => {
                                 const symbol = card.split('_')[1];
                                 return (
-                                    <img src={`deck/${symbol}/${card}.png`}></img>
+                                    <img src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
                                 );
                             })
+                        }
+                        {
+                            currentPlayer == sessionId ? (
+                                <p>Your turn</p>
+                            ): (
+                                ''
+                            )
                         }
                         <p>{sessionId}</p>
                     </div>
