@@ -92,3 +92,15 @@ code {
 	top: 70%;
 	left: 30%;
 }
+.activeRound {
+	position: absolute;
+    border: 1px solid white;
+    padding: 10px;
+    width: auto;
+	display: flex;
+    top: 30%;
+    left: 40%;
+	img {
+		width: 100px;	
+	}
+}

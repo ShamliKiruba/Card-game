@@ -19,7 +19,7 @@ function HostGame() {
 		});
     };
   return (
-    <div onClick={create}>Create game</div>
+    <h1 onClick={create}>Create game</h1>
   );
 }
 

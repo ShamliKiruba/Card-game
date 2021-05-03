@@ -3,10 +3,12 @@ import { callAPI } from '../common/service';
 import { get } from '../common/storage';
 import { SOCKET } from '../common/socket';
 import { dummy } from '../data/dummy';
+import RoundTable from './roundTable';
 
 function Room() {
     let [opponents, setOpponents] = useState([]);
     // let [cards, setCards] = useState([]);
+    let [cardList, setCardList] = useState([])
     let [game, setGame] = useState({});
     let [currentPlayer, setCurrentPlayer] = useState('');
     const sessionId = get("sessionId");
@@ -28,7 +30,8 @@ function Room() {
             setOpponents(opponents);
         });
         SOCKET.on("distribute_cards", res => {
-            setGame(res)
+            setGame(res);
+            setCardList(res.set_one_round);
             // setCards(res.player_card[sessionId].cards)
         });
         SOCKET.on("player_turn", res => {
@@ -38,6 +41,7 @@ function Room() {
         SOCKET.on("drop_card", res => {
             console.log("drop_card", res)
             setGame(res.data);
+            setCardList(res.data.set_one_round);
         });
     }, []);
 
@@ -51,6 +55,7 @@ function Room() {
             callAPI('POST', 'dropCard', payload).then(res => {
                 console.log('successful', res)
                 setGame(res.data)
+                setCardList(res.data.set_one_round);
                 // setCards(res.data.player_card[sessionId].cards)
             });    
         }
@@ -59,7 +64,7 @@ function Room() {
     return (
         <div className="board-container"> 
             {
-                opponents.length == 3 ? (
+                opponents.length == 1 ? (
                     <div>
                         {opponents.length > 0  && opponents.map(opponent => {
                             const cardCount = game.player_card && game.player_card[opponent].totalCards
@@ -107,6 +112,21 @@ function Room() {
                     </div>
                 )
             }
+            <div>
+                {/* {Object.keys(game).length > 0 ? <RoundTable data={game.set_round_one} /> : ''} */}
+                {cardList.length ? (
+                    <div class="activeRound">
+                        {cardList.map(card => {
+                            const symbol = card.split('_')[1];
+                            return(
+                                <div>
+                                    <img src={`deck/${symbol}/${card}.png`} value={card}></img>
+                                </div>
+                            )
+                        })}
+                    </div>
+                ) : ''}
+            </div>
         </div>
     )
 }

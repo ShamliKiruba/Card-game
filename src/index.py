@@ -55,13 +55,24 @@ def dropCard():
     player_card = game.get(int(room)).get('player_card').get(id)
     player_card.get('cards').remove(card) # remove from list
     player_card['totalCards'] =  player_card.get('totalCards') - 1
-    round_one[id] = card
+    round_one.append(card)
     response = game.get(int(room))
+    conditionForOneRound(room)
     socketIo.emit('drop_card', {'data': response}, to=room)
     return jsonify({'data': response})
 
 app.debug = True
 app.host = 'localhost'
+
+def conditionForOneRound(room):
+    # check the length of the set_one_round array
+    # compare the list of cards for every drop
+    # same symbol np, different symbol, check if valid drop
+    # if not return card
+    # if valid compare the largest and send everything to that person
+    # update game obj
+    # one successfl round,clear the set_one_round array and dump in center cards
+
 
 def setPlayersTurn(room):
     clientArr = activeRooms.get(room)
@@ -81,7 +92,7 @@ def setPlayersTurn(room):
 def checkForPlayers(room):
     cardsDistributed = 0
     clientArr = activeRooms.get(room)
-    if len(clientArr) == 4:
+    if len(clientArr) == 2:
         asd = Match()
         cards = asd.distributeCards()
         for index, client in enumerate(clientArr):
@@ -93,7 +104,7 @@ def checkForPlayers(room):
         game[room] = {
             'player_card': player_card,
             'center_cards': {},
-            'set_one_round': {},
+            'set_one_round': [],
             'active_player': ''
         } 
         response = copy.deepcopy(game.get(room))
@@ -110,7 +121,7 @@ def checkForPlayers(room):
                 response.get('player_card').update(playerCard)
             socketIo.emit('distribute_cards', response, room=client)
             cardsDistributed += 1
-        if cardsDistributed == 4:
+        if cardsDistributed == 2:
             setPlayersTurn(room)
 
 

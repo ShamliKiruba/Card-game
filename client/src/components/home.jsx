@@ -9,8 +9,8 @@ function Home() {
   return (
     <div>
       {/* <img src="deck/club/2_club.png"></img> */}
-      <div onClick={() => changeRoute('create')}>Host game</div>
-      <div onClick={() => changeRoute('join')}>Join game</div>
+      <h1 onClick={() => changeRoute('create')}>Host game</h1>
+      <h1 onClick={() => changeRoute('join')}>Join game</h1>
     </div>
   );
 }
