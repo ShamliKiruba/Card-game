@@ -11,7 +11,7 @@ function RoundTable({data}) {
     });
 
     return(
-        <div class="activeRound">
+        <div className="activeRound">
             {cardList.map(card => {
                 return(
                     <div>

@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { callAPI } from '../common/service';
 import { get } from '../common/storage';
 import { SOCKET } from '../common/socket';
-import { dummy } from '../data/dummy';
 import RoundTable from './roundTable';
 
 function Room() {
     let [opponents, setOpponents] = useState([]);
     // let [cards, setCards] = useState([]);
-    let [cardList, setCardList] = useState({})
+    let [players, setPlayers] = useState([]);
+    let [cardList, setCardList] = useState({});
     let [game, setGame] = useState({});
     let [currentPlayer, setCurrentPlayer] = useState('');
     const sessionId = get("sessionId");
@@ -22,11 +22,11 @@ function Room() {
         // to get all players
         callAPI('POST', 'getPlayers', payload).then(data => {
             // all players
-            // setPlayers(data.players);
+            setPlayers(data.players);
         });
         SOCKET.emit("join", payload);
         SOCKET.on("join_room_announcement", playerData => {
-            let opponents = playerData.filter(player => player != sessionId);
+            let opponents = playerData.filter(player => player !== sessionId);
             setOpponents(opponents);
         });
         SOCKET.on("distribute_cards", res => {
@@ -47,11 +47,12 @@ function Room() {
     }, []);
 
     const dropCard = (e) => {
-        if(currentPlayer == sessionId) {
+        if(currentPlayer === sessionId) {
             let payload = {
                 card: e.target.getAttribute('value'),
                 id: sessionId,
-                room: room
+                room: room,
+                game
             };
             callAPI('POST', 'dropCard', payload).then(res => {
                 console.log('successful', res)
@@ -65,7 +66,7 @@ function Room() {
     return (
         <div className="board-container"> 
             {
-                opponents.length == 1 ? (
+                opponents.length === 1 ? (
                     <div>
                         {opponents.length > 0  && opponents.map(opponent => {
                             const cardCount = game.player_card && game.player_card[opponent].totalCards
@@ -73,7 +74,7 @@ function Room() {
                                 <div className='opponent' key={opponent}>
                                     <div className="others">
                                         {
-                                            currentPlayer == opponent ? (
+                                            currentPlayer === opponent ? (
                                                 <p>Opponent's Turn</p>
                                             ) : (
                                                 ''
@@ -81,7 +82,7 @@ function Room() {
                                         }
                                         <p>{opponent}</p>
                                         {
-                                            [...Array(cardCount)].map((e, i) => <img src={`design.png`}></img>)
+                                            [...Array(cardCount)].map((e, i) => <img key={i} alt="hidden cards" src={`design.png`}></img>)
                                         }
                                     </div>
                                 </div>
@@ -90,7 +91,7 @@ function Room() {
                     }
                     <div className="myDeck">
                         {
-                            currentPlayer == sessionId ? (
+                            currentPlayer === sessionId ? (
                                 <p>Your turn</p>
                             ): (
                                 ''
@@ -99,10 +100,10 @@ function Room() {
                         <p>{sessionId}</p>
                         <div className="myCards">
                             {
-                                game.player_card && game.player_card[sessionId].cards.map(card => {
+                                game.player_card && game.player_card[sessionId].cards.map((card, index) => {
                                     const symbol = card.split('_')[1];
                                     return (
-                                        <img src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
+                                        <img alt="my cards" key={index} src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
                                     );
                                 })
                             }
@@ -119,15 +120,15 @@ function Room() {
             <div>
                 {/* {Object.keys(game).length > 0 ? <RoundTable data={game.set_round_one} /> : ''} */}
                 {/* cardList ex:  {1: {5pPgacn5M7234OW8AAAZ: "Q_club"}, 2: {le_DYjBZmJzfQBgBAAAb: "K_heart"}} */}
-                {Object.keys(cardList).length ? (
-                    <div class="activeRound">
+                {(Object.keys(cardList).length && players.length <= Object.keys(cardList).length)? (
+                    <div className="activeRound">
                         {Object.keys(cardList).map(key => {
                             let turn = cardList[key];
-                            let card = Object.values(turn)[0];
+                            let card = turn.card;
                             const symbol = card.split('_')[1];
                             return(
                                 <div>
-                                    <img src={`deck/${symbol}/${card}.png`} value={card}></img>
+                                    <img alt="current round cards" src={`deck/${symbol}/${card}.png`} value={card}></img>
                                 </div>
                             )
                         })}
