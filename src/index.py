@@ -51,27 +51,67 @@ def dropCard():
     room = json.loads(request.data.decode('utf-8')).get('room')
     card = json.loads(request.data.decode('utf-8')).get('card')
     id = json.loads(request.data.decode('utf-8')).get('id')
-    round_one = game.get(int(room)).get('set_one_round')
+    round_one = game.get(int(room)).get('current_round')
     player_card = game.get(int(room)).get('player_card').get(id)
     player_card.get('cards').remove(card) # remove from list
     player_card['totalCards'] =  player_card.get('totalCards') - 1
-    round_one.append(card)
+    existing = len(round_one)
+    round_one[existing+1] = {
+        id: card,
+    }
     response = game.get(int(room))
-    conditionForOneRound(room)
+    # conditionForOneRound(room)
     socketIo.emit('drop_card', {'data': response}, to=room)
     return jsonify({'data': response})
 
 app.debug = True
 app.host = 'localhost'
 
+def checkForHighestDraw(cardList, init_draw):
+    maxCard = 2
+    for i in range(0,len(cardList),1):
+        cardNumber = cardList.get(i).get('card')[0:1]
+        if maxCard <= cardNumber:
+            maxCard = cardNumber
+            maxId = cardList.get(i).get('id')
+
 def conditionForOneRound(room):
-    # check the length of the set_one_round array
+    # check the length of the current_round array
     # compare the list of cards for every drop
     # same symbol np, different symbol, check if valid drop
     # if not return card
     # if valid compare the largest and send everything to that person
     # update game obj
-    # one successfl round,clear the set_one_round array and dump in center cards
+    # one successfl round,clear the current_round array and dump in center cards
+    falsyMove = False
+    differentSymbolDrawn = False
+    game_room = game.get(int(room))
+    cardList = game_room.get('current_round')
+    init_draw = cardList.get('1').get('card')[2:]
+    for i in range(0,len(cardList),1):
+        symbol = cardList.get(i).get('card')[2:]
+        if symbol != init_draw:
+            differentSymbolDrawn = True
+            # get the player's cards
+            currentCardList = game_room.player_card.get(cardList.get(i).get('id'))
+            for index, check in currentCardList:
+                symbolAvailable = currentCardList[i][0][2:]
+                if symbolAvailable == init_draw:
+                    falsyMove = True
+                    return
+            # check if valid drop
+            # loop through game_room.player_card[cardList.get(i).id]
+    if falsyMove == True:
+        # redraw correct card
+        return None
+    elif differentSymbolDrawn == True:
+        checkForHighestDraw(cardList, init_draw)
+    else:
+        print("else")
+        # continue round
+        # if over, happy flow - stash set
+
+    playerCount = len(activeRooms.get(room))
 
 
 def setPlayersTurn(room):
@@ -104,7 +144,7 @@ def checkForPlayers(room):
         game[room] = {
             'player_card': player_card,
             'center_cards': {},
-            'set_one_round': [],
+            'current_round': {},
             'active_player': ''
         } 
         response = copy.deepcopy(game.get(room))

@@ -15,7 +15,7 @@ export const dummy = {
         "pEf_2xeFBQWhP9btAAAF": {"room": 7700, "cards": null, "totalCards": 13},
         "xg_MFRuAs3N-RTxdAAAH": {"room": 7700, "cards": null, "totalCards": 13}
        },
-       "set_one_round": {}   
+       "current_round": {}   
     },
     CARDS_DATA : ["6_dice", "4_dice", "9_club", "A_spade", "2_spade", "9_dice", "3_heart", "4_spade", "A_club", "5_spade", "3_club", "Q_club", "4_heart"],
     SESSION_DATA : "kNk2MmtMugHb9r8gAAAJ",

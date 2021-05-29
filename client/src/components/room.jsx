@@ -8,7 +8,7 @@ import RoundTable from './roundTable';
 function Room() {
     let [opponents, setOpponents] = useState([]);
     // let [cards, setCards] = useState([]);
-    let [cardList, setCardList] = useState([])
+    let [cardList, setCardList] = useState({})
     let [game, setGame] = useState({});
     let [currentPlayer, setCurrentPlayer] = useState('');
     const sessionId = get("sessionId");
@@ -31,7 +31,8 @@ function Room() {
         });
         SOCKET.on("distribute_cards", res => {
             setGame(res);
-            setCardList(res.set_one_round);
+            console.log("game", res);
+            setCardList(res.current_round);
             // setCards(res.player_card[sessionId].cards)
         });
         SOCKET.on("player_turn", res => {
@@ -41,7 +42,7 @@ function Room() {
         SOCKET.on("drop_card", res => {
             console.log("drop_card", res)
             setGame(res.data);
-            setCardList(res.data.set_one_round);
+            setCardList(res.data.current_round);
         });
     }, []);
 
@@ -55,7 +56,7 @@ function Room() {
             callAPI('POST', 'dropCard', payload).then(res => {
                 console.log('successful', res)
                 setGame(res.data)
-                setCardList(res.data.set_one_round);
+                setCardList(res.data.current_round);
                 // setCards(res.data.player_card[sessionId].cards)
             });    
         }
@@ -73,7 +74,7 @@ function Room() {
                                     <div className="others">
                                         {
                                             currentPlayer == opponent ? (
-                                                <p>Your Turn</p>
+                                                <p>Opponent's Turn</p>
                                             ) : (
                                                 ''
                                             )
@@ -89,14 +90,6 @@ function Room() {
                     }
                     <div className="myDeck">
                         {
-                            game.player_card && game.player_card[sessionId].cards.map(card => {
-                                const symbol = card.split('_')[1];
-                                return (
-                                    <img src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
-                                );
-                            })
-                        }
-                        {
                             currentPlayer == sessionId ? (
                                 <p>Your turn</p>
                             ): (
@@ -104,6 +97,17 @@ function Room() {
                             )
                         }
                         <p>{sessionId}</p>
+                        <div className="myCards">
+                            {
+                                game.player_card && game.player_card[sessionId].cards.map(card => {
+                                    const symbol = card.split('_')[1];
+                                    return (
+                                        <img src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
+                                    );
+                                })
+                            }
+                        </div>
+                        
                     </div>
                     </div>
                 ) : (
@@ -114,9 +118,12 @@ function Room() {
             }
             <div>
                 {/* {Object.keys(game).length > 0 ? <RoundTable data={game.set_round_one} /> : ''} */}
-                {cardList.length ? (
+                {/* cardList ex:  {1: {5pPgacn5M7234OW8AAAZ: "Q_club"}, 2: {le_DYjBZmJzfQBgBAAAb: "K_heart"}} */}
+                {Object.keys(cardList).length ? (
                     <div class="activeRound">
-                        {cardList.map(card => {
+                        {Object.keys(cardList).map(key => {
+                            let turn = cardList[key];
+                            let card = Object.values(turn)[0];
                             const symbol = card.split('_')[1];
                             return(
                                 <div>
