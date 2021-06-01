@@ -46,40 +46,65 @@ def getPlayers():
 
 socketIo = SocketIO(app, cors_allowed_origins="*")
 
+def updateCardCountToRoom(room, id):
+    playersList = activeRooms.get(room)
+    for index, playerid in enumerate(playersList):
+        if(playerid != id): # send communication only to other players
+            game_obj = copy.deepcopy(lobby.get(int(room)))
+            playerCard = copy.deepcopy(game_obj.get('player_card'))
+            for key in playerCard: # keep ony self data
+                if (key != playerid):
+                    emptyCards = {
+                        'cards': None   
+                    }
+                    playerCard.get(key).update(emptyCards)
+            socketIo.emit('drop_card', {'data': game_obj}, room=playerid)
+
+
 @app.route('/dropCard', methods=['POST'])
 def dropCard():
     room = json.loads(request.data.decode('utf-8')).get('room')
     card = json.loads(request.data.decode('utf-8')).get('card')
     id = json.loads(request.data.decode('utf-8')).get('id')
-    local_game = json.loads(request.data.decode('utf-8')).get('game')
+    game_local = json.loads(request.data.decode('utf-8')).get('game')
+    game_global = lobby.get(int(room))
     playerCount = len(activeRooms.get(room))
+    round_one = game_global.get('current_round')
+    existing = len(round_one)
+
     if conditionForOneRound(room, id, card):
         print("correct case")
-        global_game = lobby.get(int(room))
-        round_one = global_game.get('current_round')
-        existing = len(round_one)
         round_one[existing+1] = {
             'id': id,
             'card': card,
         }
         # on card drop, update both local and global game object and return upated local game object to the player
         # for other players emit the updated player object's totalCount, not for the current player
-        player_card = local_game.get('player_card').get(id)
-        player_card.get('cards').remove(card) # remove from list
-        player_card['totalCards'] =  player_card.get('totalCards') - 1
+        player_card_local = game_local.get('player_card').get(id)
+        player_card_global = game_global.get('player_card').get(id)
+        
+        player_card_local.get('cards').remove(card) # remove from list
+        player_card_local['totalCards'] =  player_card_local.get('totalCards') - 1
+        
+        player_card_global.get('cards').remove(card) # remove from list
+        player_card_global['totalCards'] =  player_card_global.get('totalCards') - 1
+        
         if (existing+1) == playerCount:
             # exit round - reinitialize round_one and move the object to center_cards
-            game['center_cards'].append(round_one)
-            game['current_round'] = {}
-            socketIo.emit('drop_card', {'data': game}, to=room)
-            return jsonify({'data': game})
+            game_local['center_cards'].append(round_one)
+            game_local['current_round'] = {}
+
+            game_global['center_cards'].append(round_one)
+            game_global['current_round'] = {}
         else:
-            response = game
-            socketIo.emit('drop_card', {'data': response}, to=room)
-            return jsonify({'data': response})
+            game_local['current_round'] = round_one
+            game_global['current_round'] = round_one
+
+        updateCardCountToRoom(room, id)
+        return jsonify({'data': game_local})
     else:
         print("wrong case")
-        return jsonify({'data': game})
+        return jsonify({'data': game_local})
     
 
 app.debug = True
@@ -141,6 +166,9 @@ def conditionForOneRound(room, id, card):
         # check if valid drop
         # loop through game.player_card[cardList.get(i).id]
     if falsyMove == True:
+        print("wrongggg--->>>")
+        print(card)
+        print(init_draw)
         # user should redraw correct card - user selected different smbol though he have the correct one
         return False
     elif differentSymbolDrawn == True and falsyMove == False:
@@ -148,6 +176,7 @@ def conditionForOneRound(room, id, card):
         # update game object here
         # then check for highest
         # quit the round and send all to the one who drew highest card
+        print("winning case")
         return True
         # checkForHighestDraw(cardList, init_draw)
     else:
@@ -173,7 +202,7 @@ def setPlayersTurn(room):
 def checkForPlayers(room):
     cardsDistributed = 0
     clientArr = activeRooms.get(room)
-    if len(clientArr) == 2:
+    if len(clientArr) == 4:
         asd = Match()
         cards = asd.distributeCards()
         for index, client in enumerate(clientArr):
@@ -204,7 +233,7 @@ def checkForPlayers(room):
                 response.get('player_card').update(playerCard)
             socketIo.emit('distribute_cards', response, room=client)
             cardsDistributed += 1
-        if cardsDistributed == 2:
+        if cardsDistributed == 4:
             setPlayersTurn(room)
 
 

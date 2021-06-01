@@ -8,8 +8,9 @@ function Room() {
     let [opponents, setOpponents] = useState([]);
     // let [cards, setCards] = useState([]);
     let [players, setPlayers] = useState([]);
-    let [cardList, setCardList] = useState({});
+    let [roundTable, setRoundTable] = useState({});
     let [game, setGame] = useState({});
+    let [stashedCards, setStashedCards] = useState([]);
     let [currentPlayer, setCurrentPlayer] = useState('');
     const sessionId = get("sessionId");
     const room = get("room");
@@ -32,7 +33,8 @@ function Room() {
         SOCKET.on("distribute_cards", res => {
             setGame(res);
             console.log("game", res);
-            setCardList(res.current_round);
+            setRoundTable(res.current_round);
+            setStashedCards(res.center_cards);
             // setCards(res.player_card[sessionId].cards)
         });
         SOCKET.on("player_turn", res => {
@@ -40,9 +42,10 @@ function Room() {
             setCurrentPlayer(res);
         });
         SOCKET.on("drop_card", res => {
-            console.log("drop_card", res)
+            console.log("Pusher dropCard", res)
             setGame(res.data);
-            setCardList(res.data.current_round);
+            setRoundTable(res.data.current_round);
+            setStashedCards(res.data.center_cards);
         });
     }, []);
 
@@ -55,9 +58,10 @@ function Room() {
                 game
             };
             callAPI('POST', 'dropCard', payload).then(res => {
-                console.log('successful', res)
+                console.log('API dropCard', res)
                 setGame(res.data)
-                setCardList(res.data.current_round);
+                setRoundTable(res.data.current_round);
+                setStashedCards(res.data.center_cards);
                 // setCards(res.data.player_card[sessionId].cards)
             });    
         }
@@ -66,7 +70,7 @@ function Room() {
     return (
         <div className="board-container"> 
             {
-                opponents.length === 1 ? (
+                opponents.length === 3 ? (
                     <div>
                         {opponents.length > 0  && opponents.map(opponent => {
                             const cardCount = game.player_card && game.player_card[opponent].totalCards
@@ -119,11 +123,11 @@ function Room() {
             }
             <div>
                 {/* {Object.keys(game).length > 0 ? <RoundTable data={game.set_round_one} /> : ''} */}
-                {/* cardList ex:  {1: {5pPgacn5M7234OW8AAAZ: "Q_club"}, 2: {le_DYjBZmJzfQBgBAAAb: "K_heart"}} */}
-                {(Object.keys(cardList).length && players.length <= Object.keys(cardList).length)? (
+                {/* roundTable ex:  {1: {5pPgacn5M7234OW8AAAZ: "Q_club"}, 2: {le_DYjBZmJzfQBgBAAAb: "K_heart"}} */}
+                {Object.keys(roundTable).length? (
                     <div className="activeRound">
-                        {Object.keys(cardList).map(key => {
-                            let turn = cardList[key];
+                        {Object.keys(roundTable).map(key => {
+                            let turn = roundTable[key];
                             let card = turn.card;
                             const symbol = card.split('_')[1];
                             return(
@@ -134,6 +138,20 @@ function Room() {
                         })}
                     </div>
                 ) : ''}
+            </div>
+            <div>
+                {/* {Object.keys(game).length > 0 ? <RoundTable data={game.set_round_one} /> : ''} */}
+                {/* roundTable ex:  {1: {5pPgacn5M7234OW8AAAZ: "Q_club"}, 2: {le_DYjBZmJzfQBgBAAAb: "K_heart"}} */}
+                {/* {(stashedCards.length > 0) ? (
+                    <div className="stashedCards">
+                        {stashedCards.map((draw, index) => {
+                            return (
+                                <p>Round {index + 1} over</p>
+                            )
+                        })}
+                    </div>
+                ) : ''} */}
+                <p><p>Round {stashedCards.length} over</p></p>
             </div>
         </div>
     )
