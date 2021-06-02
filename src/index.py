@@ -51,7 +51,7 @@ def updateCardCountToRoom(room, id):
     for index, playerid in enumerate(playersList):
         if(playerid != id): # send communication only to other players
             game_obj = copy.deepcopy(lobby.get(int(room)))
-            playerCard = copy.deepcopy(game_obj.get('player_card'))
+            playerCard = game_obj.get('player_card')
             for key in playerCard: # keep ony self data
                 if (key != playerid):
                     emptyCards = {
@@ -71,8 +71,8 @@ def dropCard():
     playerCount = len(activeRooms.get(room))
     round_one = game_global.get('current_round')
     existing = len(round_one)
-
-    if conditionForOneRound(room, id, card):
+    condition = conditionForOneRound(room, id, card)
+    if condition is not False:
         print("correct case")
         round_one[existing+1] = {
             'id': id,
@@ -89,17 +89,26 @@ def dropCard():
         player_card_global.get('cards').remove(card) # remove from list
         player_card_global['totalCards'] =  player_card_global.get('totalCards') - 1
         
-        if (existing+1) == playerCount:
-            # exit round - reinitialize round_one and move the object to center_cards
-            game_local['center_cards'].append(round_one)
-            game_local['current_round'] = {}
-
-            game_global['center_cards'].append(round_one)
+        if condition == 'winning_flow':
+            # check for highest
+            # update center_cards, current_round and push all the cards to highest id
+            init_draw = round_one.get(1).get('card').split("_")[1]
+            loserId = checkForHighestDraw(game_local.get('current_round'), init_draw)
+            game_global = pushCardToLoser(room, loserId, round_one)
+            
             game_global['current_round'] = {}
+            game_local['current_round'] = {}
         else:
-            game_local['current_round'] = round_one
-            game_global['current_round'] = round_one
+            if (existing+1) == playerCount:
+                # exit round - reinitialize round_one and move the object to center_cards
+                game_local['center_cards'].append(round_one)
+                game_local['current_round'] = {}
 
+                game_global['center_cards'].append(round_one)
+                game_global['current_round'] = {}
+            else:
+                game_local['current_round'] = round_one
+                game_global['current_round'] = round_one    
         updateCardCountToRoom(room, id)
         return jsonify({'data': game_local})
     else:
@@ -117,18 +126,32 @@ def getPrecedence(card):
         'K': 13,
         'A': 14
     }
-    if type(card) == 'string':
-        return card
+    if str(card) in order:
+        return order.get(card)
     else:
-        return order[card] 
+        return card
+
+def pushCardToLoser(room, loserId, round_one):
+    game_global = lobby.get(int(room))
+    current_loser_cards = game_global.get('player_card').get(loserId).get('cards')
+    for key in round_one:
+        card = round_one[key].get('card') 
+        current_loser_cards.append(card)
+        game_global.get('player_card').get(loserId)['totalCards'] = len(current_loser_cards)
+    print("after loser data update--->")
+    print(game_global)
+    return game_global
+
 
 def checkForHighestDraw(cardList, init_draw):
     maxCard = 2 # init with min value
-    for i in range(0,len(cardList),1):
-        cardNumber = cardList.get(i).get('card')[0:1]
-        cardNumber = getPrecedence(cardNumber)
+    for i in cardList:
+        print("Failedd->>")
+        print(cardList.get(i))
+        card = cardList.get(i).get('card').split("_")[0]
+        cardNumber = getPrecedence(card)
         # card value goes from J to Q, K till A. A takes highst precedence
-        if maxCard <= cardNumber:
+        if int(maxCard) <= int(cardNumber):
             maxCard = cardNumber
             maxId = cardList.get(i).get('id')
     return maxId
@@ -150,16 +173,19 @@ def conditionForOneRound(room, id, card):
     game = lobby.get(int(room))
     cardList = game.get('current_round')
     if len(cardList) == 0:
+        print("game returned")
         return True
     print(game)
-    init_draw = cardList.get(1).get('card')[2:]
-    symbol = card[2:]
+    init_draw = cardList.get(1).get('card').split("_")[1]
+    symbol = card.split("_")[1]
     if symbol != init_draw:
+        print('case 1')
+        print(card)
         differentSymbolDrawn = True
         # get the player's cards
         currentCardList = game.get('player_card').get(id).get('cards')
         for i in range(0,len(currentCardList),1):
-            symbolAvailable = currentCardList[i][2:]
+            symbolAvailable = currentCardList[i].split("_")[1]
             if symbolAvailable == init_draw:
                 falsyMove = True
                 return
@@ -177,11 +203,11 @@ def conditionForOneRound(room, id, card):
         # then check for highest
         # quit the round and send all to the one who drew highest card
         print("winning case")
-        return True
+        return 'winning_flow'
         # checkForHighestDraw(cardList, init_draw)
     else:
         print("happy flow")
-        return True
+        return 'happy_flow'
         # happy flow - stash set
 
 

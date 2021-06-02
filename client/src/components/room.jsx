@@ -151,7 +151,7 @@ function Room() {
                         })}
                     </div>
                 ) : ''} */}
-                <p><p>Round {stashedCards.length} over</p></p>
+                <p>Round {stashedCards.length} over</p>
             </div>
         </div>
     )
