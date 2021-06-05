@@ -1,0 +1,13 @@
+Setup DB mock. A context builder
+
+
+
+1. Remove static player count from 4 and set max to 10
+2. Divide cards randomly - few players will have extra others less number of cards
+3. Remove time for each player's turn
+
+
+Later:
+
+4. Ramdonly drop card a valid card if player didnt select one
+5. if player don't have that symbol, skip tuen, he loses a winning chance

@@ -1,15 +1,26 @@
-from flask import Flask, jsonify, request;
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, send, disconnect, emit, join_room
 from flask_login import current_user
 from random import randint
-from logic import Match
+from logic.logic import Match
 import json
 import copy
 import time
 import asyncio
+
+from flask_restful import Api
+from api import routes
+from pusher import pusher
+from components.Lobby import Lobby
+
 # import psycopg2
 
 app = Flask(__name__)
+api = Api(app=app)
+routes.add_routes(api=api)
+
+lobby = Lobby()
+print(lobby)
 app.config['SECRET_KEY'] = 'mysecret'
 
 roomsCreated = []
@@ -45,6 +56,7 @@ def getPlayers():
     return jsonify({'players': players})
 
 socketIo = SocketIO(app, cors_allowed_origins="*")
+pusher.add_pusher(socketIo)
 
 def updateCardCountToRoom(room, id):
     playersList = activeRooms.get(room)
@@ -220,7 +232,7 @@ def setPlayersTurn(room):
     i = 0
     while True:
         socketIo.emit("player_turn", clientArr[i], to=room)
-        time.sleep(10)   
+        time.sleep(7)   
         i += 1
         if i == len(clientArr):
             i = 0
@@ -263,12 +275,12 @@ def checkForPlayers(room):
             setPlayersTurn(room)
 
 
-@socketIo.on('connect')
-def test_connect():
-    print("------------------------------")
-    print('[INFO] Web client connected: {}'.format(request.sid))
-    print("------------------------------")
-    send(request.sid)
+# @socketIo.on('connect')
+# def test_connect():
+#     print("------------------------------")
+#     print('[INFO] Web client connected: {}'.format(request.sid))
+#     print("------------------------------")
+#     send(request.sid)
 
 @socketIo.on('disconnect')  
 def test_connect():
@@ -276,14 +288,14 @@ def test_connect():
     print('[INFO] Web client disconnected: {}'.format(request.sid))
     print("------------------------------")
 
-@socketIo.on('join')
-def handle_join_room_event(data):
-    username = data['sessionId']
-    room = data['room']
-    join_room(room)
-    # send(username, to=room)
-    socketIo.emit('join_room_announcement', activeRooms.get(room), to=room)
-    checkForPlayers(room)
+# @socketIo.on('join')
+# def handle_join_room_event(data):
+#     username = data['sessionId']
+#     room = data['room']
+#     join_room(room)
+#     # send(username, to=room)
+#     socketIo.emit('join_room_announcement', activeRooms.get(room), to=room)
+#     checkForPlayers(room)
 
 @socketIo.on("message")
 def handleMessage(msg):
