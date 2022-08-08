@@ -40,6 +40,25 @@ function Room() {
         SOCKET.on("player_turn", res => {
             console.log("player_turn", res)
             setCurrentPlayer(res);
+            setTimeout(() => {
+                console.log('after 10s wait')
+                    // let cardList = game.player_card[res];
+                    // if(Object.keys(game.current_round).length) {
+                    //     let init_draw = game.current_round[1].card.split('_')[1]
+                    //     let presentCards = cardList.filter(card => (init_draw == card.split('_')[1]))
+                    //     if(presentCards.length) {
+                    //         const randomIndex = Math.floor(Math.random() * presentCards.length);
+                    //         let cardToDrop = presentCards[randomIndex]
+                    //         dropCard(cardToDrop)
+                    //     //  emit drop_card with this card
+                    //     } else { 
+                    //         // skip the turn
+                    //     }
+                    // }
+                    // if time exceeds check if the player have the symbol supposed to be drawn
+                    // if yes chose random card and drop - loser move
+                    // if not miss a chance, he will lose a winning chance
+            }, 5000);
         });
         SOCKET.on("drop_card", res => {
             console.log("Pusher dropCard", res)
@@ -49,10 +68,10 @@ function Room() {
         });
     }, []);
 
-    const dropCard = (e) => {
+    const dropCard = (cardToDrop) => {
         if(currentPlayer === sessionId) {
             let payload = {
-                card: e.target.getAttribute('value'),
+                card: cardToDrop,
                 id: sessionId,
                 room: room,
                 game
@@ -107,7 +126,7 @@ function Room() {
                                 game.player_card && game.player_card[sessionId].cards.map((card, index) => {
                                     const symbol = card.split('_')[1];
                                     return (
-                                        <img alt="my cards" key={index} src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e)}></img>
+                                        <img alt="my cards" key={index} src={`deck/${symbol}/${card}.png`} value={card} onClick={(e) => dropCard(e.target.getAttribute('value'))}></img>
                                     );
                                 })
                             }

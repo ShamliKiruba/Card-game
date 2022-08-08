@@ -95,6 +95,8 @@ def dropCard():
             init_draw = round_one.get(1).get('card').split("_")[1]
             loserId = checkForHighestDraw(game_local.get('current_round'), init_draw)
             game_global = pushCardToLoser(room, loserId, round_one)
+            # loser will start the next round
+            setPlayersTurn(room, loserId)
             
             game_global['current_round'] = {}
             game_local['current_round'] = {}
@@ -175,6 +177,9 @@ def conditionForOneRound(room, id, card):
     if len(cardList) == 0:
         print("game returned")
         return True
+    print("incoming request-->")
+    print(card)
+    print("game-->")
     print(game)
     init_draw = cardList.get(1).get('card').split("_")[1]
     symbol = card.split("_")[1]
@@ -184,18 +189,22 @@ def conditionForOneRound(room, id, card):
         differentSymbolDrawn = True
         # get the player's cards
         currentCardList = game.get('player_card').get(id).get('cards')
+        print("currentCardList-->")
+        print(currentCardList)
         for i in range(0,len(currentCardList),1):
             symbolAvailable = currentCardList[i].split("_")[1]
+            print("symbolAvailable-->")
+            print(symbolAvailable)
             if symbolAvailable == init_draw:
+                print("casee 2>>")
                 falsyMove = True
-                return
         # check if valid drop
         # loop through game.player_card[cardList.get(i).id]
     if falsyMove == True:
         print("wrongggg--->>>")
         print(card)
         print(init_draw)
-        # user should redraw correct card - user selected different smbol though he have the correct one
+        # user should redraw correct card - user selected different symbol though he have the correct one
         return False
     elif differentSymbolDrawn == True and falsyMove == False:
         # user don't have the correct symbol, a valid draw
@@ -211,7 +220,10 @@ def conditionForOneRound(room, id, card):
         # happy flow - stash set
 
 
-def setPlayersTurn(room):
+def setPlayersTurn(room, id):
+    if id:
+        socketIo.emit("player_turn", id, to=room)
+        return
     clientArr = activeRooms.get(room)
     print("------------------------------")
     print("proper order-->")
@@ -260,7 +272,7 @@ def checkForPlayers(room):
             socketIo.emit('distribute_cards', response, room=client)
             cardsDistributed += 1
         if cardsDistributed == 4:
-            setPlayersTurn(room)
+            setPlayersTurn(room, '')
 
 
 @socketIo.on('connect')
